@@ -1,0 +1,51 @@
+name: Deployment Validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "helm/**"
+      - "k8s/**"
+      - "istio/**"
+      - "scripts/**"
+      - ".github/workflows/deployment-validation.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "helm/**"
+      - "k8s/**"
+      - "istio/**"
+      - "scripts/**"
+      - ".github/workflows/deployment-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.4
+
+      - name: Lint Helm chart
+        run: helm lint ./helm/canary-demo
+
+      - name: Render Helm templates
+        run: helm template canary-demo ./helm/canary-demo > /tmp/canary-rendered.yaml
+
+      - name: Check rendered output is not empty
+        run: test -s /tmp/canary-rendered.yaml
+
+      - name: Check shell script syntax
+        run: |
+          for script in scripts/*.sh; do
+            [ -f "$script" ] || continue
+            bash -n "$script"
+          done
