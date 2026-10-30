@@ -1,82 +1,96 @@
 # Kubernetes-Based Canary Deployment with K3s and Istio
 
-A hands-on learning project demonstrating two versions of a Node.js web app on Kubernetes with Istio weighted routing: 80% stable and 20% canary.
+A hands-on DevOps project that deploys two versions of a Node.js application to Kubernetes and gradually routes traffic with Istio.
 
-## Stack
-- K3s / Kubernetes
-- Docker
-- Node.js
-- Istio Gateway, DestinationRule and VirtualService
-- Bash scripts
+## Architecture
+- Application: Node.js HTTP app with / and /health endpoints
+- Containerization: Docker images for stable and canary versions
+- Orchestration: K3s / Kubernetes Deployments and Services
+- Service mesh: Istio Gateway, DestinationRule and VirtualService
+- Progressive delivery: 80% stable / 20% canary weighted traffic
+- Rollback: switch traffic to 100% stable
+- CI/CD: GitHub Actions builds and publishes both images to GitHub Container Registry (GHCR)
+- Packaging: Helm chart for repeatable workload installation
 
-## Project structure
-- `app/`: small HTTP app with version and health endpoints
-- `docker/`: container image definition
-- `k8s/`: namespace, deployments, services and gateway
-- `istio/`: weighted routing and 100% stable rollback manifests
-- `scripts/`: build, deploy, test and rollback helpers
+## Repository structure
+| Path | Purpose |
+|---|---|
+| app/ | Node.js demo application and health endpoint |
+| docker/ | Dockerfile for stable/canary images |
+| k8s/ | Namespace, Deployments, Services and Istio Gateway |
+| istio/ | DestinationRule and 80/20 + 100/0 VirtualServices |
+| helm/canary-demo/ | Helm chart for stable and canary workloads |
+| scripts/ | Build, deploy, traffic verification and rollback scripts |
+| .github/workflows/ | Container build/publish and Helm/shell validation workflows |
+| LOCAL-K3S-RUNBOOK.md | Step-by-step local deployment guide |
 
-## Prerequisites
-Docker, kubectl, a working Kubernetes/K3s cluster, Istio installed in that cluster, and curl. Istio installation and gateway service names can differ by environment; follow the official Istio install guide for your cluster.
+## CI/CD pipeline
+On pushes to main, GitHub Actions builds the stable and canary Docker images and publishes both tags to GHCR:
+- ghcr.io/sindhupriya5e1/kubernetes-canary-deployment-k3s-istio:stable
+- ghcr.io/sindhupriya5e1/kubernetes-canary-deployment-k3s-istio:canary
 
-## 1. Build images
-Run from repository root:
+The deployment validation workflow checks Helm chart rendering and shell script syntax when deployment files change. Check [GitHub Actions runs](https://github.com/sindhupriya5e1/kubernetes-canary-deployment-k3s-istio/actions) for the latest result. GHCR packages may need to be made public in GitHub → Packages before a cluster can pull them without credentials.
+
+## Run locally on K3s
+The local deployment script builds images and imports them into K3s containerd, so it does not depend on GHCR:
 ```bash
-docker build -f docker/Dockerfile -t canary-demo:stable --build-arg APP_VERSION=stable .
-docker build -f docker/Dockerfile -t canary-demo:canary --build-arg APP_VERSION=canary .
-```
-For local K3s, import images into its containerd store:
-```bash
-docker save canary-demo:stable -o canary-demo-stable.tar
-docker save canary-demo:canary -o canary-demo-canary.tar
-sudo k3s ctr images import canary-demo-stable.tar
-sudo k3s ctr images import canary-demo-canary.tar
-```
-For a remote cluster, push images to a registry and update image names in the deployment YAML.
-
-## 2. Deploy
-Ensure Istio is installed first, then:
-```bash
-kubectl apply -f k8s/namespace.yaml
-kubectl label namespace canary-demo istio-injection=enabled --overwrite
-kubectl apply -f k8s/
-kubectl apply -f istio/destination-rule.yaml
-kubectl apply -f istio/virtual-service-80-20.yaml
-kubectl rollout status deployment/stable-app -n canary-demo
-kubectl rollout status deployment/canary-app -n canary-demo
+bash scripts/deploy-local-k3s.sh
 ```
 
-## 3. Test
-Check resources:
-```bash
-kubectl get pods,svc -n canary-demo
-kubectl get gateway,virtualservice,destinationrule -n canary-demo
-```
-Port-forward the Istio ingress gateway (service name may vary):
+Requirements: K3s, Docker, kubectl, and an already-installed Istio control plane/ingress gateway. Run this script inside the Linux/WSL environment where K3s is installed.
+
+Open the ingress gateway in terminal 1:
 ```bash
 kubectl -n istio-system port-forward svc/istio-ingressgateway 8080:80
 ```
-In another terminal, send many requests:
-```bash
-bash scripts/test-traffic.sh http://127.0.0.1:8080/ 100
-```
-Responses include the selected app version. A 100-request sample should trend toward 80/20; small samples are not guaranteed to match exactly.
 
-## 4. Roll back
+In terminal 2, check the app and sample the weighted traffic:
+```bash
+curl http://127.0.0.1:8080/health
+curl http://127.0.0.1:8080/
+bash scripts/verify-canary.sh http://127.0.0.1:8080/ 100
+```
+
+The sample should trend toward 80/20 over enough requests. Weighted routing is probabilistic, so an individual sample is not guaranteed to be exactly 80/20.
+
+## Rollback
 ```bash
 bash scripts/rollback-to-stable.sh
+bash scripts/verify-canary.sh http://127.0.0.1:8080/ 30
 ```
-To restore the canary experiment, reapply `istio/virtual-service-80-20.yaml`.
 
-## Troubleshooting
-- **ImagePullBackOff:** import images into the cluster runtime or use a registry.
-- **No ingress traffic:** verify gateway service name, gateway selector and port-forward.
-- **Istio resources missing:** confirm Istio CRDs are installed.
-- **No sidecars:** enable injection and restart/recreate application pods.
-- **Unexpected routing:** inspect resources and run `istioctl analyze -n canary-demo`.
+Restore the canary split:
+```bash
+kubectl apply -f istio/virtual-service-80-20.yaml
+```
 
-## Portfolio evidence
-Capture screenshots of pods/services, the 80/20 VirtualService, and sample responses from both versions. Only describe the deployment as completed after you run and validate it.
+## Helm
+Lint and render:
+```bash
+helm lint ./helm/canary-demo
+helm template canary-demo ./helm/canary-demo
+```
 
-## Resume bullet (after successful testing)
-Implemented a Kubernetes canary deployment using K3s and Istio, configured weighted traffic routing between stable and canary versions, and documented rollout validation and rollback procedures.
+Install the workloads:
+```bash
+helm upgrade --install canary-demo ./helm/canary-demo --create-namespace
+```
+
+The chart installs the stable/canary workloads and their Services. Apply the Istio routing resources separately:
+```bash
+kubectl label namespace canary-demo istio-injection=enabled --overwrite
+kubectl apply -f k8s/gateway.yaml
+kubectl apply -f istio/destination-rule.yaml
+kubectl apply -f istio/virtual-service-80-20.yaml
+```
+
+## Troubleshooting and full instructions
+See [LOCAL-K3S-RUNBOOK.md](LOCAL-K3S-RUNBOOK.md) for prerequisites, commands, verification, rollback and troubleshooting.
+
+## Important deployment note
+The local port-forward URL http://127.0.0.1:8080 is accessible from your computer while port-forward is running. It is not a public website URL. A public URL requires a reachable cloud host/Kubernetes cluster, DNS, firewall configuration and HTTPS.
+
+Do not claim a live deployment has been validated until the application has been deployed and traffic/rollback tests have been run against the target cluster.
+
+## Resume bullet (after successful live validation)
+Implemented a Kubernetes canary deployment using K3s and Istio, automated Docker image build and publishing with GitHub Actions, configured 80/20 weighted traffic routing, and documented health checks and rollback procedures.
