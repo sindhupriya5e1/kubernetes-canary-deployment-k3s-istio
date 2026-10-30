@@ -21,6 +21,7 @@ A hands-on DevOps project that deploys two versions of a Node.js application to 
 | istio/ | DestinationRule and 80/20 + 100/0 VirtualServices |
 | helm/canary-demo/ | Helm chart for stable and canary workloads |
 | scripts/ | Build, deploy, traffic verification and rollback scripts |
+| monitoring/ | Prometheus ServiceMonitor, Grafana dashboard and setup guide |
 | .github/workflows/ | Container build/publish and Helm/shell validation workflows |
 | LOCAL-K3S-RUNBOOK.md | Step-by-step local deployment guide |
 
@@ -52,6 +53,10 @@ bash scripts/verify-canary.sh http://127.0.0.1:8080/ 100
 ```
 
 The sample should trend toward 80/20 over enough requests. Weighted routing is probabilistic, so an individual sample is not guaranteed to be exactly 80/20.
+
+## Prometheus + Grafana monitoring
+
+The app exposes Prometheus request metrics at `/metrics`. Install the monitoring stack and apply the ServiceMonitor and Grafana dashboard manifests by following [monitoring/README.md](monitoring/README.md). The dashboard tracks request rates, version split and HTTP errors for stable/canary.
 
 ## Rollback
 ```bash
