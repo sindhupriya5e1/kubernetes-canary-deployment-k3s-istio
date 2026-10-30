@@ -1,41 +1,23 @@
 # DevOps additions
 
-This branch adds a container CI workflow and an optional Helm chart.
+The main branch includes:
+- GitHub Actions container build and GHCR publishing workflow: .github/workflows/container-ci.yml
+- Helm and shell validation workflow: .github/workflows/deployment-validation.yml
+- Helm chart: helm/canary-demo/
+- Local K3s image build/import/deploy helper: scripts/deploy-local-k3s.sh
+- Weighted traffic verification helper: scripts/verify-canary.sh
+- Full local runbook: LOCAL-K3S-RUNBOOK.md
 
-## GitHub Actions + GHCR
+## CI/CD
+The container workflow builds stable and canary variants. On pushes to main it publishes both to GHCR using the built-in GITHUB_TOKEN. No personal access token is required. Check the Actions tab for the latest workflow result.
 
-The workflow at `.github/workflows/container-ci.yml` builds both stable and canary images on pull requests. On pushes to `main` and manual workflow runs, it also publishes:
-- `ghcr.io/<owner>/<repository>:stable`
-- `ghcr.io/<owner>/<repository>:canary`
+## Local K3s deployment
+Run bash scripts/deploy-local-k3s.sh from the repository root in the Linux/WSL environment that runs K3s. The script builds Docker images, imports them into K3s containerd, applies Kubernetes and Istio resources, and waits for rollout completion.
 
-It uses the repository's built-in `GITHUB_TOKEN`; no personal access token is required. Check **Actions** after merging. If package publishing is blocked by repository policy, review Actions permissions and package access settings.
+Istio itself must already be installed in the cluster. The script does not install or upgrade the Istio control plane.
 
-## Helm chart
+## Validation
+Port-forward the ingress gateway and run bash scripts/verify-canary.sh http://127.0.0.1:8080/ 100. Then run bash scripts/rollback-to-stable.sh and verify stable responses.
 
-Validate and render the chart from the repository root:
-
-```bash
-helm lint ./helm/canary-demo
-helm template canary-demo ./helm/canary-demo
-```
-
-Install into a cluster:
-
-```bash
-helm upgrade --install canary-demo ./helm/canary-demo --create-namespace
-```
-
-The chart creates stable/canary Deployments and Services with the same `app: canary-demo` and `version: stable|canary` labels used by the existing Istio routing resources. By default it uses local image tags `canary-demo:stable` and `canary-demo:canary`. For GHCR images, override the repository and tags, for example:
-
-```bash
-helm upgrade --install canary-demo ./helm/canary-demo \
-  --set image.repository=ghcr.io/OWNER/REPOSITORY \
-  --set stable.tag=stable \
-  --set canary.tag=canary
-``
-
-Replace OWNER/REPOSITORY with the lowercase GitHub owner/repository path. Ensure the cluster can pull the images if the package is private.
-
-## Important status
-
-These additions are committed on a feature branch and should be merged through the pull request. They have not been run against your laptop's K3s/Istio cluster, so validate the Actions run, Helm lint/template output, and live traffic before describing the enhancements as tested. The workflow publishes images; it does not automatically deploy into a personal cluster or implement metrics-triggered rollback.
+## Scope and limitations
+GitHub Actions builds and publishes images; it does not connect to a personal laptop's K3s cluster. The local port-forward address is not a public internet URL. Public hosting requires a cloud host/cluster, DNS, firewall configuration and HTTPS. Do not describe local deployment or traffic tests as successful until they have actually been run and verified.
