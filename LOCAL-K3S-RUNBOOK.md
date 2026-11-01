@@ -75,3 +75,16 @@ kubectl apply -f istio/virtual-service-80-20.yaml
 ## Local versus public URL
 
 Port-forwarding exposes the app on your own computer at `http://127.0.0.1:8080` only while the command is running. It is not a public internet URL. To publish this app publicly, deploy it to a reachable cloud VM/Kubernetes cluster and configure DNS, firewall rules, and HTTPS. Do not expose the K3s API server publicly.
+
+## Automatic health-gated promotion
+
+After the stable and canary Deployments are Ready, run:
+
+```bash
+KUBECTL_CMD="sudo k3s kubectl" bash scripts/auto-promote-canary.sh
+```
+
+The script checks the canary `/health` endpoint at each stage and promotes traffic from 80/20 to 50/50, then 0/100 (stable/canary). If a check fails, it restores 100/0 stable/canary routing.
+
+For options and a controlled rollback test, see [AUTO-CANARY-PROMOTION.md](AUTO-CANARY-PROMOTION.md). This script performs a one-time health check during promotion; it does not continuously monitor metrics after promotion.
+
