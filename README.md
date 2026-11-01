@@ -123,3 +123,63 @@ Do not claim a live deployment has been validated until the application has been
 
 ## Resume bullet (after successful live validation)
 Implemented a Kubernetes canary deployment using K3s and Istio, automated Docker image build and publishing with GitHub Actions, configured 80/20 weighted traffic routing, and documented health checks and rollback procedures.
+
+## Local K3s + Istio validation
+
+Validated on the local K3s cluster on 1 November 2026.
+
+### Helm release
+
+- Helm release: `canary`
+- Namespace: `canary-demo`
+- Chart: `helm-canary-0.1.0`
+- Revision: `5`
+- Status: `deployed`
+- Workload pods: stable (2 replicas), canary (1 replica); all application and test-client pods were Ready (`2/2`) with zero restarts at verification time.
+
+### Istio routing configuration
+
+The live VirtualService was verified with:
+- Host: `canary-demo.canary-demo.svc.cluster.local`
+- Gateways: `mesh` and `canary-demo-gateway`
+- Stable subset: `version: stable`, configured weight: 80
+- Canary subset: `version: canary`, configured weight: 20
+
+The live DestinationRule was also verified to define both `stable` and `canary` subsets against `canary-demo.canary-demo.svc.cluster.local`.
+
+### 100-request traffic sample
+
+100 requests were sent from the `test-client` pod to the in-cluster service:
+
+| Version | Responses | Observed share | Configured weight |
+|---|---:|---:|---:|
+| Stable | 78 | 78% | 80% |
+| Canary | 22 | 22% | 20% |
+| **Total** | **100** | **100%** | **100%** |
+
+Result: the observed 78/22 split is consistent with the configured 80/20 weighted routing. Weighted routing is probabilistic, so a finite sample is not expected to match the configured percentages exactly.
+
+### Commands used for verification
+
+Check the Helm release and pods:
+
+```bash
+sudo helm --kubeconfig /etc/rancher/k3s/k3s.yaml list -n canary-demo
+sudo k3s kubectl get pods -n canary-demo
+```
+
+Inspect the live Istio routing resources:
+
+```bash
+sudo k3s kubectl get virtualservice canary-demo -n canary-demo -o yaml
+sudo k3s kubectl get destinationrule canary-demo -n canary-demo -o yaml
+```
+
+Sample 100 requests through the in-cluster service:
+
+```bash
+for i in $(seq 1 100); do
+  sudo k3s kubectl exec test-client -n canary-demo -- curl -s http://canary-demo
+done | grep -o '"version":"[^"]*"' | sort | uniq -c
+```
+
