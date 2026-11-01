@@ -195,3 +195,16 @@ for i in $(seq 1 100); do
 done | grep -o '"version":"[^"]*"' | sort | uniq -c
 ```
 
+### Automatic promotion validation (1 November 2026)
+
+The staged promotion script was executed against the local K3s cluster:
+
+| Stage | Stable | Canary | Health checks |
+|---|---:|---:|---:|
+| Initial | 80% | 20% | 5/5 passed |
+| Mid-stage | 50% | 50% | 5/5 passed |
+| Final | 0% | 100% | 5/5 passed |
+
+All 15 canary health probes passed. After promotion, a separate 20-request test through the in-cluster service returned 20 canary responses (20/20). The live VirtualService was verified at stable 0% / canary 100%.
+
+This confirms the tested local cluster state at that time; it does not mean the cluster is publicly reachable. The script is a one-shot health-endpoint gate, not continuous post-deployment monitoring.
