@@ -39,5 +39,11 @@
   <section><h2>Run and verify</h2><p>Use the <a href="https://github.com/sindhupriya5e1/kubernetes-canary-deployment-k3s-istio/blob/main/LOCAL-K3S-RUNBOOK.md">local K3s runbook</a> to deploy to a configured cluster. The local port-forward endpoint is only available from the machine running the command; a public application URL requires a cloud Kubernetes cluster or other public hosting environment.</p>
     <p>Useful checks: <code>/health</code> for application health and <code>/metrics</code> for Prometheus metrics.</p>
   </section>
+
+  <section><h2>Verified local canary promotion</h2>
+    <p>Local K3s validation on 1 November 2026: the automated rollout passed all 15 health probes across 80/20, 50/50 and 0/100 traffic stages. The final Istio VirtualService was verified at stable 0% / canary 100%, and a follow-up 20-request in-cluster test returned 20 canary responses.</p>
+    <p><strong>Scope:</strong> these are results from the local test cluster, not a publicly hosted application endpoint. The health-check script is a staged, one-shot gate rather than continuous monitoring.</p>
+    <p><a href="https://github.com/sindhupriya5e1/kubernetes-canary-deployment-k3s-istio/blob/main/AUTO-CANARY-PROMOTION.md">Automatic promotion and rollback guide</a></p>
+  </section>
   <footer>Project source and deployment status: <a href="https://github.com/sindhupriya5e1/kubernetes-canary-deployment-k3s-istio">GitHub repository</a>. This page is a project showcase; it does not claim that a public Kubernetes application endpoint is currently running.</footer>
 </main></body></html>
