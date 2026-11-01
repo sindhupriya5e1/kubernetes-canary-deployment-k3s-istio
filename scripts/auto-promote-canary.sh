@@ -63,7 +63,7 @@ if ! health_check "80/20"; then rollback; exit 1; fi
 set_weights 50 50
 if ! health_check "50/50"; then rollback; exit 1; fi
 set_weights 0 100
-if ! health_check "100/0"; then rollback; exit 1; fi
+if ! health_check "0/100"; then rollback; exit 1; fi
 
 echo "Promotion successful: canary is now receiving 100% of traffic."
 echo "This is a one-shot health-endpoint check, not a continuous metrics controller."
