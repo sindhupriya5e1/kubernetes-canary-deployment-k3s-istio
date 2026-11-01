@@ -37,6 +37,18 @@ This is a public project showcase, not the live Kubernetes application. A public
 | .github/workflows/ | Container build/publish and Helm/shell validation workflows |
 | LOCAL-K3S-RUNBOOK.md | Step-by-step local deployment guide |
 
+## Application tests
+
+Run the built-in Node.js smoke tests before deploying:
+
+```bash
+cd app
+npm test
+cd ..
+```
+
+The tests start the application and verify `/health`, `/`, 404 handling, and Prometheus `/metrics`. The Container CI workflow runs these tests automatically before building the stable and canary images.
+
 ## CI/CD pipeline
 On pushes to main, GitHub Actions builds the stable and canary Docker images and publishes both tags to GHCR:
 - ghcr.io/sindhupriya5e1/kubernetes-canary-deployment-k3s-istio:stable
