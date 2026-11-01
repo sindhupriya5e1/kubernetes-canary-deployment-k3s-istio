@@ -82,6 +82,18 @@ The sample should trend toward 80/20 over enough requests. Weighted routing is p
 
 The app exposes Prometheus request metrics at `/metrics`. Install the monitoring stack and apply the ServiceMonitor and Grafana dashboard manifests by following [monitoring/README.md](monitoring/README.md). The dashboard tracks request rates, version split and HTTP errors for stable/canary.
 
+## Automatic canary promotion and health-based rollback
+
+Run the staged promotion script from the repository root:
+
+```bash
+KUBECTL_CMD="sudo k3s kubectl" bash scripts/auto-promote-canary.sh
+```
+
+It checks Deployment readiness, then progresses through 80/20, 50/50 and 0/100 stable/canary traffic stages. At each stage it probes the canary `/health` endpoint from the in-cluster `test-client` pod. A failed probe triggers an immediate 100/0 stable/canary rollback.
+
+See [AUTO-CANARY-PROMOTION.md](AUTO-CANARY-PROMOTION.md) for configuration and a safe rollback test. This is a one-shot health-endpoint gate, not a continuous metrics-based controller.
+
 ## Rollback
 ```bash
 bash scripts/rollback-to-stable.sh
