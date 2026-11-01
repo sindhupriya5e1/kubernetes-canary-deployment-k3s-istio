@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1220">
+  <title>K3s + Istio Canary Deployment | DevOps Project</title>
+  <meta name="description" content="A DevOps project demonstrating Kubernetes canary releases with K3s, Istio, Docker, GitHub Actions, Prometheus and Grafana.">
+  <style>
+    :root{color-scheme:dark;--bg:#0b1220;--panel:#121d30;--line:#263750;--text:#edf4ff;--muted:#a9bad0;--accent:#71d5c2;--blue:#83b7ff}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0%,#173452 0,transparent 38%),var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,Segoe UI,sans-serif}
+    a{color:var(--blue)}.wrap{max-width:1080px;margin:auto;padding:32px 22px 70px}.nav{display:flex;justify-content:space-between;gap:16px;align-items:center;color:var(--muted);font-size:.92rem}.hero{padding:82px 0 56px}.eyebrow{color:var(--accent);font-weight:700;letter-spacing:.13em;text-transform:uppercase;font-size:.78rem}.hero h1{font-size:clamp(2.4rem,6vw,4.5rem);line-height:1.08;max-width:850px;margin:14px 0}.hero p{max-width:760px;color:var(--muted);font-size:1.12rem}.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}.btn{display:inline-block;padding:11px 17px;border:1px solid var(--line);border-radius:10px;text-decoration:none;font-weight:650}.primary{background:var(--accent);color:#071b1a;border-color:var(--accent)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:28px 0 54px}.card,section{background:linear-gradient(145deg,#142238,#101a2b);border:1px solid var(--line);border-radius:16px;padding:22px}.card h3{margin:0 0 7px}.card p,section p,li{color:var(--muted)}h2{font-size:1.65rem;margin:0 0 12px}.pill{display:inline-block;border:1px solid #315b60;color:var(--accent);padding:3px 9px;border-radius:999px;font-size:.8rem;margin:4px 5px 4px 0}.flow{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin:18px 0}.node{background:#1b2b42;border:1px solid #34506e;border-radius:9px;padding:9px 13px}.arrow{color:var(--accent)}section{margin:18px 0}code{color:#bfe9df;background:#0a1422;padding:2px 6px;border-radius:5px}footer{margin-top:38px;color:var(--muted);font-size:.9rem}
+  </style>
+</head>
+<body><main class="wrap">
+  <nav class="nav"><strong>DEVOPS PROJECT</strong><span>Kubernetes · Progressive Delivery · Observability</span></nav>
+  <header class="hero">
+    <div class="eyebrow">Cloud Native Deployment</div>
+    <h1>Kubernetes Canary Deployment with K3s &amp; Istio</h1>
+    <p>A hands-on project that demonstrates safer application releases using Docker containers, Kubernetes, Istio traffic splitting, automated image builds, health checks and rollback.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/sindhupriya5e1/kubernetes-canary-deployment-k3s-istio">View source on GitHub ↗</a>
+      <a class="btn" href="https://github.com/sindhupriya5e1/kubernetes-canary-deployment-k3s-istio/blob/main/LOCAL-K3S-RUNBOOK.md">Setup runbook</a>
+      <a class="btn" href="https://github.com/sindhupriya5e1/kubernetes-canary-deployment-k3s-istio/actions">CI/CD runs</a>
+    </div>
+  </header>
+  <div class="grid">
+    <article class="card"><h3>80 / 20 traffic split</h3><p>Route most requests to stable and a controlled share to canary using Istio VirtualService.</p></article>
+    <article class="card"><h3>Fast rollback</h3><p>Switch traffic back to 100% stable when the canary release needs to be reverted.</p></article>
+    <article class="card"><h3>CI image pipeline</h3><p>GitHub Actions builds stable and canary Docker images and publishes them to GHCR.</p></article>
+    <article class="card"><h3>Observability</h3><p>Prometheus metrics and a Grafana dashboard track request rates, versions and HTTP errors.</p></article>
+  </div>
+  <section><h2>Release flow</h2><p>The repository contains the manifests, Helm chart and scripts for this workflow:</p>
+    <div class="flow"><span class="node">Git push</span><span class="arrow">→</span><span class="node">GitHub Actions</span><span class="arrow">→</span><span class="node">Docker / GHCR</span><span class="arrow">→</span><span class="node">K3s</span><span class="arrow">→</span><span class="node">Istio 80 / 20</span></div>
+  </section>
+  <section><h2>Technology stack</h2>
+    <span class="pill">Linux / Ubuntu</span><span class="pill">Docker</span><span class="pill">Kubernetes</span><span class="pill">K3s</span><span class="pill">Istio</span><span class="pill">Helm</span><span class="pill">GitHub Actions</span><span class="pill">GHCR</span><span class="pill">Prometheus</span><span class="pill">Grafana</span><span class="pill">Node.js</span>
+  </section>
+  <section><h2>Run and verify</h2><p>Use the <a href="https://github.com/sindhupriya5e1/kubernetes-canary-deployment-k3s-istio/blob/main/LOCAL-K3S-RUNBOOK.md">local K3s runbook</a> to deploy to a configured cluster. The local port-forward endpoint is only available from the machine running the command; a public application URL requires a cloud Kubernetes cluster or other public hosting environment.</p>
+    <p>Useful checks: <code>/health</code> for application health and <code>/metrics</code> for Prometheus metrics.</p>
+  </section>
+  <footer>Project source and deployment status: <a href="https://github.com/sindhupriya5e1/kubernetes-canary-deployment-k3s-istio">GitHub repository</a>. This page is a project showcase; it does not claim that a public Kubernetes application endpoint is currently running.</footer>
+</main></body></html>
