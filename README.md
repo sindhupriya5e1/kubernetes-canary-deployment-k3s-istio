@@ -2,6 +2,18 @@
 
 A hands-on DevOps project that deploys two versions of a Node.js application to Kubernetes and gradually routes traffic with Istio.
 
+## Public project showcase
+
+A static project showcase is available in `docs/index.html` and is published through the GitHub Pages workflow. To enable the public page once:
+1. Open repository **Settings → Pages**.
+2. Under **Build and deployment**, select **Deploy from a branch: GitHub Actions** (or choose GitHub Actions as the source if that selector is shown).
+3. The `Publish project showcase` workflow will publish the page after a push to `main`; you can also start it from **Actions → Publish project showcase → Run workflow**.
+
+After a successful Pages deployment, the page URL is normally:
+`https://sindhupriya5e1.github.io/kubernetes-canary-deployment-k3s-istio/`
+
+This is a public project showcase, not the live Kubernetes application. A public app endpoint still requires a cloud Kubernetes cluster/host, network ingress, DNS and HTTPS.
+
 ## Architecture
 - Application: Node.js HTTP app with / and /health endpoints
 - Containerization: Docker images for stable and canary versions
